@@ -1,2 +1,2 @@
-asyncio
-aiotdlib
+asyncio==3.4.3
+aiotdlib==0.19.2
