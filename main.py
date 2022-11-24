@@ -1,17 +1,29 @@
 import asyncio
+import configparser
+import configparser
 from os import getenv
 from dotenv import load_dotenv
 import sqlite3
 from json import loads
-from pyrogram import Client, errors
-load_dotenv()
+from pyrogram import Client, errors, enums
+# load_dotenv()
+
+config = configparser.ConfigParser()  # создаём объекта парсера
+config.read(".ini")  # читаем конфиг
 
 
-BOT_TOKEN = getenv('BOT_TOKEN')
-api_id = int(getenv('API_ID'))
-api_hash = getenv('API_HASH')
-phone_number = getenv('PHONE')
-password = getenv('PASSWORD')
+# BOT_TOKEN = getenv('BOT_TOKEN')
+# api_id = int(getenv('API_ID'))
+# api_hash = getenv('API_HASH')
+# phone_number = getenv('PHONE')
+# password = getenv('PASSWORD')
+
+
+BOT_TOKEN = config['Config']['BOT_TOKEN']
+api_id = config['Config']['API_ID']
+api_hash = config['Config']['API_HASH']
+phone_number = config['Config']['PHONE']
+password = config['Config']['PASSWORD']
 
 
 conn = sqlite3.connect(
@@ -31,6 +43,8 @@ chats = [
 
 counter = 0
 
+data = []
+
 
 def db_table_val(id: int, chat: str, id_user: int, first_name: str, last_name: str, username: str, date: str, text: str):
     """Добавление записи в БД"""
@@ -48,6 +62,22 @@ def db_table_val(id: int, chat: str, id_user: int, first_name: str, last_name: s
         )
     )
     conn.commit()
+
+
+def search_text(text: str) -> bool:
+    if text in data:
+        return True
+    else:
+        return False
+
+
+def delete_text_from_data():
+    while True:
+        print(f'До {len(data)}')
+        if len(data) < 1001:
+            break
+        a = data.pop(-1)
+        print(f'После {len(data)}')
 
 
 def get_record(text: str) -> bool:
@@ -88,7 +118,7 @@ async def main(array: list) -> None:
     async with Client("my_account", api_id=api_id, api_hash=api_hash, phone_number=phone_number, password=password) as app:
         try:
             for el in array:
-                async for message in app.get_chat_history(el, limit=10):
+                async for message in app.get_chat_history(el, limit=50):
                     dict_message = loads(str(message))
                     title_chat = dict_message['chat']['title']
                     id_user = int(dict_message['from_user']['id'])
@@ -101,29 +131,32 @@ async def main(array: list) -> None:
                     username = 'Неизвестно'
                     if 'username' in dict_message['from_user']:
                         username = dict_message['from_user']['username']
-                    date = dict_message['date']
+                    # date = dict_message['date']
                     text = dict_message['text']
-                    if (('wts' in text.lower() and 'binance' in text.lower()) or ('wtb' in text.lower() and 'binance' in text.lower())) and get_record(text) is False:
+                    if (('wts' in text.lower() and 'binance' in text.lower()) or ('wtb' in text.lower() and 'binance' in text.lower())) and search_text(text) is False:
                         counter += 1
-                        db_table_val(
-                            id=counter,
-                            chat=title_chat,
-                            id_user=id_user,
-                            first_name=first_name,
-                            last_name=last_name,
-                            username=username,
-                            date=date,
-                            text=text
-                        )
-                        message = f'Chat: {title_chat}\nFirst name: {first_name}\nLast name: {last_name}\nUsername: {username}\nText: {text}'
+                        # db_table_val(
+                        #     id=counter,
+                        #     chat=title_chat,
+                        #     id_user=id_user,
+                        #     first_name=first_name,
+                        #     last_name=last_name,
+                        #     username=username,
+                        #     date=date,
+                        #     text=text
+                        # )
+                        if text not in data:
+                            data.append(text)
+                        html_id_user = f'<a href="tg://user?id={id_user}">{id_user}</a>'
+                        message = f'Chat: {title_chat}\nId user: {html_id_user}\nFirst name: {first_name}\nLast name: {last_name}\nUsername: {username}\nText: {text}'
                         count += 1
-                        await app.send_message("me", message)
+                        await app.send_message("me", message, parse_mode=enums.ParseMode.HTML)
                 await asyncio.sleep(3)
         except errors.exceptions.flood_420.FloodWait as wait_err:
             await asyncio.sleep(wait_err.value)
-    print(f'В БД занесено {count} записей, в этом цикле')
+    # print(f'В БД занесено {count} записей, в этом цикле')
 
 
 while True:
     asyncio.run(main(chats))
-    delete_get_record()
+    delete_text_from_data()
