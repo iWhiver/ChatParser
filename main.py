@@ -16,8 +16,7 @@ PHONE_NUMBER = config['Config']['PHONE']
 PASSWORD = config['Config']['PASSWORD']
 FLAG = config['Config']['FLAG']
 
-if FLAG == 'True':
-    db = Sql_lite(FLAG)
+db = Sql_lite(FLAG)
 
 chats = [
     'mediasocialmarket',
