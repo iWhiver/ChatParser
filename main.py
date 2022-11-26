@@ -15,9 +15,9 @@ API_HASH = config['Config']['API_HASH']
 PHONE_NUMBER = config['Config']['PHONE']
 PASSWORD = config['Config']['PASSWORD']
 FLAG = config['Config']['FLAG']
-print(FLAG)
 
-db = Sql_lite(FLAG)
+if FLAG == 'True':
+    db = Sql_lite(FLAG)
 
 chats = [
     'mediasocialmarket',
