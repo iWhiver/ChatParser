@@ -11,18 +11,14 @@ api_id = config['Config']['API_ID']
 api_hash = config['Config']['API_HASH']
 phone_number = config['Config']['PHONE']
 password = config['Config']['PASSWORD']
+chats = config['Config']['chats'].replace(' ', '').split(',')
+SEARCH_COIN = config['Config']['SEARCH_COIN'].lower()
 
-chats = [
-    'mediasocialmarket',
-    'terncrypto_otc',
-    'MarketICOBOG'
-]
-
+SEND_MESSAGE_TO_ME = False
 MESSAGE_LIMIT = 50
-SEARCH_COIN = 'Binance'.lower()
 WTS = True
 WTB = False
-data = []
+uniq_text = []
 
 
 async def main():
@@ -49,28 +45,31 @@ def create_a_message(dict_message, text):
 
 async def logic(app: Client) -> None:
     try:
-        for chat in chats:
-            async for message in app.get_chat_history(chat, limit=MESSAGE_LIMIT):
-                dict_message = loads(str(message))
-                text = dict_message['text'].lower()
-                if ((('wts' in text and WTS) and SEARCH_COIN in text) or
-                        ('wtb' in text and WTB) and SEARCH_COIN in text):
+        while True:
+            for chat in chats:
+                async for message in app.get_chat_history(chat, limit=MESSAGE_LIMIT):
+                    dict_message = loads(str(message))
+                    text = dict_message['text'].lower()
+                    if ((('wts' in text and WTS) and SEARCH_COIN in text) or
+                            ('wtb' in text and WTB) and SEARCH_COIN in text):
 
-                    if text not in uniq_text:
-                        uniq_text.append(text)
+                        if text not in uniq_text:
+                            uniq_text.append(text)
 
-                    message = create_a_message(dict_message, text)
-                    print(message)
-                    print("=========================================")
-                    if SEND_MESSAGE_TO_ME:
-                        await app.send_message("me", message, parse_mode=enums.ParseMode.HTML)
-        await asyncio.sleep(10)
+                            message = create_a_message(dict_message, text)
+                            print(message)
+                            print("=========================================")
+                            if SEND_MESSAGE_TO_ME:
+                                await app.send_message("me", message, parse_mode=enums.ParseMode.HTML)
+
+            await asyncio.sleep(10)
 
     except errors.exceptions.flood_420.FloodWait as wait_err:
         print('wait after flood')
         await asyncio.sleep(wait_err.value)
     except Exception as e:
         print(e)
+
 
 uvloop.install()
 asyncio.run(main())
