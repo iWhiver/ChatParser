@@ -15,6 +15,7 @@ chats = config['Config']['chats'].replace(' ', '').split(',')
 SEARCH_COIN = config['Config']['SEARCH_COIN'].lower()
 
 SEND_MESSAGE_TO_ME = False
+SEARCH_BY_MESSAGE = False
 MESSAGE_LIMIT = 50
 WTS = True
 WTB = False
@@ -45,30 +46,35 @@ def create_a_message(dict_message, text):
 
 async def logic(app: Client) -> None:
     try:
-        while True:
-            for chat in chats:
-                async for message in app.get_chat_history(chat, limit=MESSAGE_LIMIT):
-                    dict_message = loads(str(message))
-                    text = dict_message['text'].lower()
-                    if ((('wts' in text and WTS) and SEARCH_COIN in text) or
-                            ('wtb' in text and WTB) and SEARCH_COIN in text):
-
-                        if text not in uniq_text:
-                            uniq_text.append(text)
-
-                            message = create_a_message(dict_message, text)
-                            print(message)
-                            print("=========================================")
-                            if SEND_MESSAGE_TO_ME:
-                                await app.send_message("me", message, parse_mode=enums.ParseMode.HTML)
-
-            await asyncio.sleep(10)
+        if SEARCH_BY_MESSAGE:
+            await search_message(app)
 
     except errors.exceptions.flood_420.FloodWait as wait_err:
         print('wait after flood')
         await asyncio.sleep(wait_err.value)
     except Exception as e:
         print(e)
+
+
+async def search_message(app: Client) -> None:
+    while True:
+        for chat in chats:
+            async for message in app.get_chat_history(chat, limit=MESSAGE_LIMIT):
+                dict_message = loads(str(message))
+                text = dict_message['text'].lower()
+                if ((('wts' in text and WTS) and SEARCH_COIN in text) or
+                        ('wtb' in text and WTB) and SEARCH_COIN in text):
+
+                    if text not in uniq_text:
+                        uniq_text.append(text)
+
+                        message = create_a_message(dict_message, text)
+                        print(message)
+                        print("=========================================")
+                        if SEND_MESSAGE_TO_ME:
+                            await app.send_message("me", message, parse_mode=enums.ParseMode.HTML)
+
+        await asyncio.sleep(10)
 
 
 uvloop.install()
